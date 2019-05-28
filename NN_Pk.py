@@ -104,7 +104,7 @@ for epoch in xrange(epochs):
     # save model if it is better
     if loss_train[epoch]<min_train and loss_test[epoch]<min_eval:
         print 'saving model; epoch %d; %.3e %.3e'%(epoch,loss_train[epoch],loss_test[epoch])
-        torch.save(net.state_dict(), './best_model_kmax=%.2f.pt'%kmax)
+        torch.save(net.state_dict(), 'results/best_model_kmax=%.2f.pt'%kmax)
         min_train, min_eval = loss_train[epoch], loss_test[epoch]
     
     if loss.item()<1e-3 and not(done1):
@@ -134,7 +134,7 @@ for epoch in xrange(epochs):
     #plt.plot(loss_test[:epoch])
     #plt.pause(0.0001)
     
-np.savetxt('loss_kmax=%.2f.txt'%kmax, np.transpose([loss_train,loss_test]))
+np.savetxt('results/loss_kmax=%.2f.txt'%kmax, np.transpose([loss_train,loss_test]))
 
 
 
@@ -142,7 +142,7 @@ np.savetxt('loss_kmax=%.2f.txt'%kmax, np.transpose([loss_train,loss_test]))
 test_data, test_label = dataset(k,Nk,batch_size=10000)
 
 net = Model(k.shape[0],hidden1,hidden2,hidden3)
-net.load_state_dict(torch.load('./best_model_kmax=%.2f.pt'%kmax))
+net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
 net.eval()
 
 pred = net(test_data)
