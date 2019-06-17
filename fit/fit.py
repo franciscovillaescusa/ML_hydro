@@ -30,13 +30,13 @@ class Model(nn.Module):
 
 # This function returns the predicted y-values for the particular model considered
 # x --------> array with the x-values of the data
-# theta ----> array with the value of the model parameters [a,b]
+# theta ----> array with the value of the model parameters [A,B]
 def model_theory(x,theta):
     A,B = theta
     return A*x**B
 
 # This functions returns the log-likelihood for the theory model
-# theta -------> array with parameters to fit [a,b]
+# theta -------> array with parameters to fit [A,B]
 # x,y,dy ------> data to fit
 def lnlike_theory(theta,x,y,dy):
     # put priors here
@@ -44,7 +44,7 @@ def lnlike_theory(theta,x,y,dy):
     #    return -np.inf
     #else:
     y_model = model_theory(x,theta)
-    chi2 = -np.sum(((y-y_model)/dy)**2,dtype=np.float64)
+    chi2 = -np.sum(((y-y_model)/dy)**2, dtype=np.float64)
     return chi2
 
 # create the data to train the network
@@ -85,7 +85,7 @@ hidden3 = 50
 last_layer = 2
 predict_gamma = False
 
-batch_size_valid = 64*10
+batch_size_valid = 64*100
 #######################################################################################
 
 dA = np.zeros(len(kmaxs), dtype=np.float64)
@@ -143,14 +143,15 @@ for l,kmax in enumerate(kmaxs):
         
     pred = net(torch.tensor(np.log10(valid_data)))
     pred = pred.detach().numpy()
-    dA, dB = 0.0, 0.0
+    dA2, dB2 = 0.0, 0.0
     for i in xrange(batch_size_valid):
-        dA = dA + (pred[i,0]-valid_label[i,0])**2
-        dB = dB + (pred[i,1]-valid_label[i,1])**2
-    dA = dA/batch_size_valid
-    dB = dB/batch_size_valid
-    print '%.2f %.3e %.3e'%(kmax, dA, dB)
-        
+        dA2 = dA2 + (pred[i,0]-valid_label[i,0])**2
+        dB2 = dB2 + (pred[i,1]-valid_label[i,1])**2
+    dA2 = dA2/batch_size_valid
+    dB2 = dB2/batch_size_valid
+    print '%.2f %.3e %.3e'%(kmax, dA2, dB2)
+    print '%.2f %.2f %.2f'%(kmax, dA2/dA[l], dB2/dB[l])
+    
     sys.exit()
     
 np.savetxt('results_fit.txt', np.transpose([kmaxs, dA, dB]))
