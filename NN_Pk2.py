@@ -1,5 +1,6 @@
 # This script trains the model and save the best model to file.
 # That model can later be read and evaluated its accuracy
+from mpi4py import MPI
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,6 +9,12 @@ import torch.optim as optim
 import sys,os
 import matplotlib.pyplot as plt
 #from torchcontrib.optim import SWA
+
+
+###### MPI DEFINITIONS ###### 
+comm   = MPI.COMM_WORLD
+nprocs = comm.Get_size()
+myrank = comm.Get_rank()
 
 
 # define the arquitecture of the network
@@ -64,10 +71,10 @@ hidden3 = 50
 
 predict_gamma = False
 
-epochs           = 4000
+epochs           = 3000
 batch_size_train = 16
 batch_size_valid = 64*5
-batch_size_test  = 10000
+batch_size_test  = 64*100
 batches          = 100
 
 plot_results = True
@@ -75,26 +82,28 @@ plot_results = True
 fout = 'results/new_results_kpivot=2.0_no-gamma.txt'
 #######################################################################################
 
+# find the numbers that each cpu will work with
+numbers = np.where(np.arange(len(kmaxs))%nprocs==myrank)[0]
 
 # define the arrays containing the error on each parameter
-dalpha = np.zeros(len(kmaxs), dtype=np.float64)
-dbeta  = np.zeros(len(kmaxs), dtype=np.float64)
-dgamma = np.zeros(len(kmaxs), dtype=np.float64)
+dalpha   = np.zeros(len(kmaxs), dtype=np.float64)
+dalpha_t = np.zeros(len(kmaxs), dtype=np.float64)
+dbeta    = np.zeros(len(kmaxs), dtype=np.float64)
+dbeta_t  = np.zeros(len(kmaxs), dtype=np.float64)
+dgamma   = np.zeros(len(kmaxs), dtype=np.float64)
+dgamma_t = np.zeros(len(kmaxs), dtype=np.float64)
 
 # do a loop over the different kmax
-for l,kmax in enumerate(kmaxs):
-
+for l in numbers:
+    
+    kmax = kmaxs[l]
     print '\nWorking with kmax = %.2f'%kmax
     
-    # find the fundamental frequency and the number of bins up to kmax
-    kF   = kmin
+    # find the fundamental frequency, the number of bins up to kmax and the k-array
+    kF     = kmin
     k_bins = int((kmax-kmin)/kF)
-
-    # define the k-array
-    k = np.arange(1,k_bins+2)*kF
-
-    # find the number of modes in each k-bin: Nk = 2*k^2*dk/kF^3
-    Nk = 4.0*np.pi*k**2*kF/kF**3    
+    k      = np.arange(1,k_bins+2)*kF
+    Nk     = 4.0*np.pi*k**2*kF/kF**3  #number of modes in each k-bin
     
     # get a validation dataset
     valid_data, valid_label = dataset(k, Nk, kpivot, batch_size_valid, predict_gamma)
@@ -111,15 +120,6 @@ for l,kmax in enumerate(kmaxs):
     net = Model(k.shape[0], hidden1, hidden2, hidden3, last_layer)
     loss_func = nn.MSELoss()
 
-    # define the optimizer
-    #base_opt = torch.optim.SGD(net.parameters(), lr=0.01)
-    #base_opt = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999),
-    #                      eps=1e-8,amsgrad=False)
-    #optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.002)
-    #optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.95, nesterov=True)
-    optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.99),
-                           eps=1e-8,amsgrad=False)
-
     # do a loop over the different epochs
     loss_train = np.zeros(epochs, dtype=np.float64)
     loss_valid = np.zeros(epochs, dtype=np.float64)
@@ -129,6 +129,31 @@ for l,kmax in enumerate(kmaxs):
     # do a loop over the different epochs
     for epoch in xrange(epochs): 
 
+        # define the optimizer here
+        if epoch==0:
+            #base_opt = torch.optim.SGD(net.parameters(), lr=0.01)
+            #base_opt = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999),
+            #                      eps=1e-8,amsgrad=False)
+            #optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.002)
+            #optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.95,
+            #                      nesterov=True)
+            optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999),
+                                   eps=1e-8,amsgrad=False)            
+        
+        # after 1000 epochs load the best model and decrease the learning rate
+        if epoch==999:
+            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
+            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
+            optimizer = optim.Adam(net.parameters(), lr=0.001/5.0, betas=(0.9, 0.999),
+                                   eps=1e-8,amsgrad=False)
+
+        # after 2000 epochs load the best model and decrease the learning rate
+        if epoch==1999:
+            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
+            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
+            optimizer = optim.SGD(net.parameters(), lr=0.001/5.0, momentum=0.95,
+                                  nesterov=True)
+        
         total_loss = 0
         for batch in xrange(batches):
     
@@ -145,7 +170,6 @@ for l,kmax in enumerate(kmaxs):
         # compute the loss for the validation set
         pred = net(valid_data)
         loss_valid[epoch] = loss_func(pred, valid_label).detach()
-        print '%04d %.3e %.3e'%(epoch,loss_train[epoch],loss_valid[epoch])
 
         # save model if it is better
         if loss_valid[epoch]<min_eval:
@@ -153,29 +177,6 @@ for l,kmax in enumerate(kmaxs):
                 %(epoch,loss_train[epoch],loss_valid[epoch])
             torch.save(net.state_dict(), 'results/best_model_kmax=%.2f.pt'%kmax)
             min_train, min_eval = loss_train[epoch], loss_valid[epoch]
-
-        # after 1000 epochs load the best model and decrease the learning rate
-        if epoch==999:
-            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
-            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
-            optimizer = optim.Adam(net.parameters(), lr=0.001/5.0, betas=(0.9, 0.99),
-                                   eps=1e-8,amsgrad=False)
-
-        # after 2000 epochs load the best model and decrease the learning rate
-        if epoch==1999:
-            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
-            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
-            optimizer = optim.Adam(net.parameters(), lr=0.001/25.0, betas=(0.9, 0.99),
-                                   eps=1e-8,amsgrad=False)
-
-        # after 3000 epochs load the best model and decrease the learning rate
-        if epoch==2999:
-            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
-            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
-            optimizer = optim.SGD(net.parameters(), lr=0.001/5.0, momentum=0.95,
-                                  nesterov=True)
-
-        
 
         # plot the losses
         if plot_results:
@@ -186,16 +187,16 @@ for l,kmax in enumerate(kmaxs):
             plt.pause(0.0001)
 
 
-"""
+
     ###### evaluate the performance of the model ######
-    test_data, test_label = dataset(k, Nk, kpivot, batch_size_test,predict_gamma)
+    test_data, test_label = dataset(k, Nk, kpivot, batch_size_test, predict_gamma)
 
     net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
     net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
     net.eval()
         
     pred = net(test_data)
-
+    
     dalpha[l] = np.mean(((pred[:,0]-test_label[:,0])**2).detach().numpy())
     print 'error alpha = %.3e'%dalpha[l]
         
@@ -207,7 +208,13 @@ for l,kmax in enumerate(kmaxs):
         print 'error gamma = %.3e'%dgamma[l]
     ###################################################
 
+# reduce the results
+comm.Reduce(dalpha, dalpha_t, root=0)
+comm.Reduce(dbeta,  dbeta_t,  root=0)
+comm.Reduce(dgamma, dgamma_t, root=0)
+    
 # save results to file
-if predict_gamma:  np.savetxt(fout, np.transpose([kmaxs, dalpha, dbeta, dgamma]))
-else:              np.savetxt(fout, np.transpose([kmaxs, dalpha, dbeta]))
-"""
+if myrank>0:  return 0
+if predict_gamma:  np.savetxt(fout, np.transpose([kmaxs, dalpha_t, dbeta_t, dgamma_t]))
+else:              np.savetxt(fout, np.transpose([kmaxs, dalpha_t, dbeta_t]))
+
