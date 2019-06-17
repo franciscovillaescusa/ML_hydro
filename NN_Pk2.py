@@ -1,3 +1,5 @@
+# This script trains the model and save the best model to file.
+# That model can later be read and evaluated its accuracy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -5,11 +7,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import sys,os
 import matplotlib.pyplot as plt
-from torchcontrib.optim import SWA
+#from torchcontrib.optim import SWA
 
-
-def model_ls(x,A,B):
-    return A*x+B
 
 # define the arquitecture of the network
 class Model(nn.Module):
@@ -65,11 +64,13 @@ hidden3 = 50
 
 predict_gamma = False
 
-epochs           = 1000
+epochs           = 4000
 batch_size_train = 16
 batch_size_valid = 64*5
 batch_size_test  = 10000
 batches          = 100
+
+plot_results = True
 
 fout = 'results/new_results_kpivot=2.0_no-gamma.txt'
 #######################################################################################
@@ -97,65 +98,27 @@ for l,kmax in enumerate(kmaxs):
     
     # get a validation dataset
     valid_data, valid_label = dataset(k, Nk, kpivot, batch_size_valid, predict_gamma)
-    print valid_data
-    print valid_data.shape
-    print k.shape
     #data = np.empty((valid_data.shape[1], valid_data.shape[0]+1))
     #data[:,0] = np.log10(k)
     #for i in xrange(valid_data.shape[0]):
     #    data[:,i+1] = valid_data[i].numpy()
     #np.savetxt('borrar.txt', data)
 
-    """
-    # fit with least squares (no errorbars)
-    M = np.vstack([np.log10(k), np.ones(len(k))]).T
-    dA, dB = 0.0, 0.0
-    for i in xrange(batch_size_valid):
-        B1,A1 = np.linalg.lstsq(M, valid_data[i].numpy(), rcond=None)[0]
-        A1 = 10**A1
-        A2,B2 = valid_label[i,0].numpy(), valid_label[i,1].numpy()
-        print '%.5f %.5f'%(A1,B1)
-        print '%.5f %.5f'%(A2,B2)
-        print ''
-        dA += (A1-A2)**2
-        dB += (B1-B2)**2
-    print dA/batch_size_valid
-    print dB/batch_size_valid
-
-    # fit the least squares (errorbars)
-    dA, dB = 0.0, 0.0
-    for i in xrange(batch_size_valid):
-        dPk = np.log10(np.sqrt(10**(valid_data[i].numpy()**2)/Nk))
-        popt, pcov = curve_fit(model_ls, np.log10(k), valid_data[i].numpy(),
-                               sigma=dPk, p0=valid_label[i].numpy())
-        B1,A1 = popt[0], 10**(popt[1])
-        A2,B2 = valid_label[i,0].numpy(), valid_label[i,1].numpy()
-        print '%.5f %.5f'%(A1,B1)
-        print '%.5f %.5f'%(A2,B2)
-        print ''
-        dA += (A1-A2)**2
-        dB += (B1-B2)**2
-    print dA/batch_size_valid
-    print dB/batch_size_valid
-    sys.exit()
-    """
-
     
-    # define the network, loss and optimizer
+    # define the network and loss
     if predict_gamma:  last_layer = 3
     else:              last_layer = 2
     net = Model(k.shape[0], hidden1, hidden2, hidden3, last_layer)
     loss_func = nn.MSELoss()
 
+    # define the optimizer
     #base_opt = torch.optim.SGD(net.parameters(), lr=0.01)
     #base_opt = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.999),
     #                      eps=1e-8,amsgrad=False)
-
     #optimizer = SWA(base_opt, swa_start=10, swa_freq=5, swa_lr=0.002)
     #optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.95, nesterov=True)
     optimizer = optim.Adam(net.parameters(), lr=0.001, betas=(0.9, 0.99),
                            eps=1e-8,amsgrad=False)
-
 
     # do a loop over the different epochs
     loss_train = np.zeros(epochs, dtype=np.float64)
@@ -182,6 +145,7 @@ for l,kmax in enumerate(kmaxs):
         # compute the loss for the validation set
         pred = net(valid_data)
         loss_valid[epoch] = loss_func(pred, valid_label).detach()
+        print '%04d %.3e %.3e'%(epoch,loss_train[epoch],loss_valid[epoch])
 
         # save model if it is better
         if loss_valid[epoch]<min_eval:
@@ -190,42 +154,39 @@ for l,kmax in enumerate(kmaxs):
             torch.save(net.state_dict(), 'results/best_model_kmax=%.2f.pt'%kmax)
             min_train, min_eval = loss_train[epoch], loss_valid[epoch]
 
-        """
-        if loss_valid[epoch].item()<1e-3 and not(done1):
-            #lr = 5e-4
-            lr = 0.002/5.0
-            for g in optimizer.param_groups:
-                g['lr'] = lr
-            done1 = True
-            print lr
+        # after 1000 epochs load the best model and decrease the learning rate
+        if epoch==999:
+            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
+            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
+            optimizer = optim.Adam(net.parameters(), lr=0.001/5.0, betas=(0.9, 0.99),
+                                   eps=1e-8,amsgrad=False)
 
-        if loss_valid[epoch].item()<1e-4 and not(done2):
-            #lr = 2e-4
-            lr /= 5.0
-            for g in optimizer.param_groups:
-                g['lr'] = lr
-            done2 = True
-            print lr
+        # after 2000 epochs load the best model and decrease the learning rate
+        if epoch==1999:
+            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
+            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
+            optimizer = optim.Adam(net.parameters(), lr=0.001/25.0, betas=(0.9, 0.99),
+                                   eps=1e-8,amsgrad=False)
 
-        if loss_valid[epoch].item()<1e-5 and not(done3):
-            #lr = 1e-4
-            lr /= 5.0
-            for g in optimizer.param_groups:
-                g['lr'] = lr
-            done3 = True
-            print lr
-        """
+        # after 3000 epochs load the best model and decrease the learning rate
+        if epoch==2999:
+            net = Model(k.shape[0],hidden1,hidden2,hidden3,last_layer)
+            net.load_state_dict(torch.load('results/best_model_kmax=%.2f.pt'%kmax))
+            optimizer = optim.SGD(net.parameters(), lr=0.001/5.0, momentum=0.95,
+                                  nesterov=True)
 
-        plt.cla() #clear axes
-        plt.yscale('log')
-        plt.plot(loss_train[:epoch])
-        plt.plot(loss_valid[:epoch])
-        plt.pause(0.0001)
-    
-        #np.savetxt('results/loss_kmax=%.2f.txt'%kmax, np.transpose([loss_train,loss_test]))
+        
+
+        # plot the losses
+        if plot_results:
+            plt.cla() #clear axes
+            plt.yscale('log')
+            plt.plot(loss_train[:epoch])
+            plt.plot(loss_valid[:epoch])
+            plt.pause(0.0001)
 
 
-
+"""
     ###### evaluate the performance of the model ######
     test_data, test_label = dataset(k, Nk, kpivot, batch_size_test,predict_gamma)
 
@@ -249,3 +210,4 @@ for l,kmax in enumerate(kmaxs):
 # save results to file
 if predict_gamma:  np.savetxt(fout, np.transpose([kmaxs, dalpha, dbeta, dgamma]))
 else:              np.savetxt(fout, np.transpose([kmaxs, dalpha, dbeta]))
+"""
