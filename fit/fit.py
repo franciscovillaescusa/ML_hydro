@@ -3,7 +3,7 @@
 # from the data
 
 import numpy as np
-import emcee,corner
+#import emcee,corner
 from scipy.optimize import minimize
 import sys,os
 import torch
@@ -79,9 +79,9 @@ kmin   = 7e-3 #h/Mpc
 kmaxs  = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
 kpivot = 2.0
 
-hidden1 = 50
-hidden2 = 50
-hidden3 = 50
+hidden1 = 70
+hidden2 = 70
+hidden3 = 70
 last_layer = 2
 predict_gamma = False
 
@@ -151,8 +151,6 @@ for l,kmax in enumerate(kmaxs):
     dB2 = dB2/batch_size_valid
     print '%.2f %.3e %.3e'%(kmax, dA2, dB2)
     print '%.2f %.2f %.2f'%(kmax, dA2/dA[l], dB2/dB[l])
-    
-    sys.exit()
     
 np.savetxt('results_fit.txt', np.transpose([kmaxs, dA, dB]))
 
