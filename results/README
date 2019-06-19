@@ -1,0 +1,66 @@
+# models
+
+results_100_6000_kpivot=2.0_no-gamma.txt 
+single hidden layer with 100 neurons
+epochs=6000
+2000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2000 epochs with Adam, lr=0.001/5, betas=(0.9, 0.999)
+2000 epochs with SGD,  lr=0.001/5, momenum=0.95, nesterov=True
+
+results_100x100_6000_kpivot=2.0_no-gamma.txt 
+2 hidden layers with 100 neurons each
+epochs=6000
+2000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2000 epochs with Adam, lr=0.001/5, betas=(0.9, 0.999)
+2000 epochs with SGD,  lr=0.001/5, momenum=0.95, nesterov=True
+
+results_100x100x100_6000_kpivot=2.0_no-gamma.txt 
+3 hidden layers with 100 neurons each
+epochs=6000
+2000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2000 epochs with Adam, lr=0.001/5, betas=(0.9, 0.999)
+2000 epochs with SGD,  lr=0.001/5, momenum=0.95, nesterov=True
+
+results_100x100x100x100_6000_kpivot=2.0_no-gamma.txt 
+4 hidden layers with 100 neurons each
+epochs=6000
+2000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2000 epochs with Adam, lr=0.001/5, betas=(0.9, 0.999)
+2000 epochs with SGD,  lr=0.001/5, momenum=0.95, nesterov=True
+
+results_50x50x50_6000_kpivot=2.0_no-gamma.txt 
+3 hidden layers with 50 neurons each
+epochs=6000
+2000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2000 epochs with Adam, lr=0.001/5, betas=(0.9, 0.999)
+2000 epochs with SGD,  lr=0.001/5, momenum=0.95, nesterov=True
+
+results_50x50x50x50_6000_kpivot=2.0_no-gamma.txt 
+4 hidden layers with 50 neurons each
+epochs=6000
+2000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2000 epochs with Adam, lr=0.001/5, betas=(0.9, 0.999)
+2000 epochs with SGD,  lr=0.001/5, momenum=0.95, nesterov=True
+
+results_50x50x50_6000_lr=5e-3_kpivot=2.0_no-gamma.txt
+3 hidden layers with 50 neurons each
+epochs=6000
+6000 epochs with Adam, lr=0.001/2,   betas=(0.9, 0.999)
+
+results_50x50x50_10000_lr=5e-3_kpivot=2.0_no-gamma.txt
+3 hidden layers with 50 neurons each
+epochs=10000
+10000 epochs with Adam, lr=0.001/2,   betas=(0.9, 0.999)
+
+results_50x50x50_20000_lr=5e-3_kpivot=2.0_no-gamma.txt
+3 hidden layers with 50 neurons each
+epochs=20000
+20000 epochs with Adam, lr=0.001/2,   betas=(0.9, 0.999)
+
+results_50x50x50_20000_5000-10000-15000_kpivot=2.0_no-gamma.txt 
+3 hidden layers with 50 neurons each
+epochs=20000
+5000 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+5000 epochs with Adam, lr=0.001/2, betas=(0.9, 0.999)
+5000 epochs with Adam, lr=0.001/4, betas=(0.9, 0.999)
+5000 epochs with Adam, lr=0.001/8, betas=(0.9, 0.999)
