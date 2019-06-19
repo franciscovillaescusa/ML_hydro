@@ -74,7 +74,7 @@ hidden4 = 50
 
 predict_gamma = False
 
-epochs           = 20000
+epochs           = 40000
 batch_size_train = 16
 batch_size_valid = 64*5
 batch_size_test  = 64*100
@@ -82,7 +82,7 @@ batches          = 100
 
 plot_results = False
 
-suffix = '50x50x50_20000_5000-10000-15000_kpivot=2.0_no-gamma'
+suffix = '50x50x50_40000_5000-10000-15000_20000_kpivot=2.0_no-gamma'
 fout = 'results/results_%s.txt'%suffix
 #######################################################################################
 
@@ -168,6 +168,13 @@ for l in numbers:
             net = Model(k.shape[0],hidden1,hidden2,hidden3,hidden4,last_layer)
             net.load_state_dict(torch.load(fmodel))
             optimizer = optim.Adam(net.parameters(), lr=0.001/8.0, betas=(0.9, 0.999),
+                                   eps=1e-8,amsgrad=False)
+
+        # after 2000 epochs load the best model and decrease the learning rate
+        if epoch==19999:
+            net = Model(k.shape[0],hidden1,hidden2,hidden3,hidden4,last_layer)
+            net.load_state_dict(torch.load(fmodel))
+            optimizer = optim.Adam(net.parameters(), lr=0.001/16.0, betas=(0.9, 0.999),
                                    eps=1e-8,amsgrad=False)
 
         total_loss = 0
