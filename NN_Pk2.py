@@ -65,7 +65,7 @@ def dataset(k, Nk, kpivot, batch_size, predict_C):
 
 ####################################### INPUT #########################################
 kmin   = 7e-3 #h/Mpc
-kmaxs  = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
+kmaxs  = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] #h/Mpc
 kpivot = 2.0
 
 hidden1 = 50
@@ -75,7 +75,7 @@ hidden4 = 50
 
 predict_C = False
 
-epochs           = 40
+epochs           = 40000
 batch_size_train = 16
 batch_size_valid = 64*10
 batch_size_test  = 64*100
@@ -83,7 +83,7 @@ batches          = 100
 
 plot_results = False
 
-suffix = '50x50x50_40000_5000-10000-15000_20000_kpivot=2.0_no-gamma'
+suffix = '50x50x50_40000_5000-10000-15000_20000_kpivot=2.0_noC'
 fout   = 'results/results_%s.txt'%suffix
 #######################################################################################
 
@@ -107,7 +107,7 @@ for l in numbers:
     # find the fundamental frequency, the number of bins up to kmax and the k-array
     kF     = kmin
     k_bins = int((kmax-kmin)/kF)
-    k      = np.arange(2,k_bins+2)*kF
+    k      = np.arange(2,k_bins+2)*kF #avoid k=kF as we will get some negative values
     Nk     = 4.0*np.pi*k**2*kF/kF**3  #number of modes in each k-bin
     
     # get a validation dataset
