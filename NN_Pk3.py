@@ -26,12 +26,16 @@ class Model(nn.Module):
         self.fc3 = nn.Linear(hidden2, hidden3)
         self.fc4 = nn.Linear(hidden3, hidden4)
         self.fc5 = nn.Linear(hidden4, last_layer)
+        self.bn1 = nn.BatchNorm1d(hidden1)
+        self.bn2 = nn.BatchNorm1d(hidden2)
+        self.bn3 = nn.BatchNorm1d(hidden3)
+        self.bn4 = nn.BatchNorm1d(hidden4)
 
     def forward(self,Pk):
-        out = F.relu(self.fc1(Pk))
-        out = F.relu(self.fc2(out))
-        out = F.relu(self.fc3(out))
-        out = F.relu(self.fc4(out))
+        out = self.bn1(F.leaky_relu(self.fc1(Pk)))
+        out = self.bn2(F.leaky_relu(self.fc2(out)))
+        out = self.bn3(F.leaky_relu(self.fc3(out)))
+        out = self.bn4(F.leaky_relu(self.fc4(out)))
         out = self.fc5(out)
         return out
     
@@ -49,7 +53,7 @@ def dataset(k, Nk, kpivot, batch_size, predict_C):
         Pk = A*k**B
         if len(indexes)>0:
             A_value = Pk[indexes[0]]/k[indexes[0]]**C
-            Pk[indexes] = A_value*k[indexes]**C*0.0+1e-8
+            Pk[indexes] = A_value*k[indexes]**C
         dPk = np.sqrt(Pk**2/Nk)
         Pk  = np.random.normal(loc=Pk, scale=dPk)
         data[i] = np.log10(Pk) #Pk
@@ -62,7 +66,7 @@ def dataset(k, Nk, kpivot, batch_size, predict_C):
 ####################################### INPUT #########################################
 kmin   = 7e-3 #h/Mpc
 kmaxs  = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] #h/Mpc
-kpivot = 0.5
+kpivot = 2.0
 
 hidden1 = 100
 hidden2 = 100
@@ -79,7 +83,7 @@ batches          = 100
 
 plot_results = False
 
-suffix = '100x100x100x100_15000_2500-5000-7500_10000_12500_kpivot=0.5_noC_0-after0.5-'
+suffix = 'BN_100x100x100x100_15000_2500-5000-7500_10000_12500_kpivot=2.0_noC'
 fout   = 'results/results_%s.txt'%suffix
 #######################################################################################
 

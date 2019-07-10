@@ -95,3 +95,14 @@ epochs=40000
 5000 epochs with Adam, lr=0.001/4, betas=(0.9, 0.999)
 5000 epochs with Adam, lr=0.001/8, betas=(0.9, 0.999)
 20000 epochs with Adam, lr=0.001/16, betas=(0.9, 0.999)
+
+results_100x100x100x100_15000_2500-5000-7500_10000_12500_kpivot=2.0_noC.txt
+kmin = 2*kF
+4 hidden layers with 100 neurons each
+epochs=15000
+2500 epochs with Adam, lr=0.001,   betas=(0.9, 0.999)
+2500 epochs with Adam, lr=0.001/2, betas=(0.9, 0.999)
+2500 epochs with Adam, lr=0.001/4, betas=(0.9, 0.999)
+2500 epochs with Adam, lr=0.001/8, betas=(0.9, 0.999)
+2500 epochs with Adam, lr=0.001/16, betas=(0.9, 0.999)
+2500 epochs with Adam, lr=0.001/32, betas=(0.9, 0.999)
