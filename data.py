@@ -6,12 +6,17 @@ import sys,os
 # create the data to train/validate/test the network
 def dataset(k, Nk, kpivot, batch_size, predict_C):
 
+    # A goes from  0.1 to 10
+    # B goes from -1.0 to 0.0
+    # C goes from -0.5 to 0.5
+    
     # get the values of the parameters/labels
     A  = (9.9*np.random.random(batch_size)+0.1)
+    A2 = (A-0.1)/9.9
     B  = -1.0 + 1.0*np.random.random(batch_size)
     C  = -0.5 + np.random.random(batch_size)
-    if predict_C:  label = np.array([A, B, C], dtype=np.float32)
-    else:          label = np.array([A, B],    dtype=np.float32)
+    if predict_C:  label = np.array([A2, B, C], dtype=np.float32)
+    else:          label = np.array([A2, B],    dtype=np.float32)
 
     # compute Pk
     Pk = np.zeros((batch_size, k.shape[0]), dtype=np.float32)
@@ -37,4 +42,4 @@ def dataset(k, Nk, kpivot, batch_size, predict_C):
     
     # return data
     data = np.log10(Pk, dtype=np.float32) #Pk
-    return torch.tensor(data), torch.tensor(label)
+    return torch.tensor(data), torch.tensor(label).T

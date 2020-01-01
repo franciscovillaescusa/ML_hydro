@@ -12,12 +12,14 @@ import architecture as architecture
 # k-values
 kmin  = 7e-3 #h/Mpc
 #kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
-kmax = 1.0 #h/Mpc
+kmax = 0.9 #h/Mpc
 
 # model parameters
-kpivot    = 0.5
+kpivot    = 2.0
 predict_C = False
-suffix    = 'BN_100x100x100x100_15000_2500-5000-7500_10000_12500_kpivot=0.5_noC'
+#suffix    = 'BN_100x100x100x100_15000_2500-5000-7500_10000_12500_kpivot=0.5_noC'
+#suffix    = 'BN_100x100x100x100_kpivot=2.0_noC'
+suffix    = 'BN_100x100x100_kpivot=2.0_noC'
 fout      = 'results/results_%s.txt'%suffix
 
 # architecture parameters
@@ -27,12 +29,7 @@ hidden3 = 100
 hidden4 = 100
 
 # training parameters
-epochs           = 15000
-batch_size_train = 32
-batch_size_valid = 64*100
-batch_size_test  = 64*100
-batches          = 100
-learning_rate    = 1e-5
+batch_size_test  = 70000
 
 plot_results = True
 ##################################################################################
@@ -47,28 +44,31 @@ Nk     = 4.0*np.pi*k**2*kF/kF**3  #number of modes in each k-bin
 if predict_C:  last_layer = 3
 else:          last_layer = 2
 
-# get the name of the model file
-fmodel = 'results/best_model_%s_kmax=%.2f.pt'%(suffix,kmax)
-
 # get the test dataset
 test_data, test_label = data.dataset(k, Nk, kpivot, batch_size_test, predict_C)
 
 # get architecture and load best-model
 net = architecture.Model(k.shape[0],hidden1,hidden2,hidden3,hidden4,last_layer)
+fmodel = 'results/best_model_%s_kmax=%.2f.pt'%(suffix,kmax)
 net.load_state_dict(torch.load(fmodel))
 
 net.eval()
 with torch.no_grad():
-    pred = net(test_data).T
+    pred = net(test_data)
 print('kmax = %.2f'%kmax)
 
-print(pred.shape, test_label.shape)
-dA = np.mean(((pred[:,0]-test_label[:,0])**2).numpy())
-print('error A = %.3e'%dA)
-        
-dB = np.mean(((pred[:,1]-test_label[:,1])**2).numpy())
+A_pred, B_pred = pred[:,0]*9.9 + 0.1, pred[:,1]
+A_test, B_test = test_label[:,0]*9.9 + 0.1, test_label[:,1]
+
+dA = np.mean(((A_pred - A_test)**2).numpy())
+dB = np.mean(((B_pred - B_test)**2).numpy())
+
+print('error A = %.3e'%dA)       
 print('error B = %.3e'%dB)
         
 if predict_C:
     dC = np.mean(((pred[:,2]-test_label[:,2])**2).numpy())        
     print('error C = %.3e'%dC)
+
+
+    

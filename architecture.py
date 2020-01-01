@@ -18,9 +18,14 @@ class Model(nn.Module):
         self.dropout = nn.Dropout(p=0.5)
 
     def forward(self,Pk):
-        out = self.dropout(F.leaky_relu(self.bn1(self.fc1(Pk))))
-        out = self.dropout(F.leaky_relu(self.bn2(self.fc2(out))))
-        out = self.dropout(F.leaky_relu(self.bn3(self.fc3(out))))
-        out = self.dropout(F.leaky_relu(self.bn4(self.fc4(out))))
+        #out = self.dropout(F.leaky_relu(self.bn1(self.fc1(Pk))))
+        #out = self.dropout(F.leaky_relu(self.bn2(self.fc2(out))))
+        #out = self.dropout(F.leaky_relu(self.bn3(self.fc3(out))))
+        #out = self.dropout(F.leaky_relu(self.bn4(self.fc4(out))))
+        #out = self.fc5(out)
+
+        out = F.leaky_relu(self.fc1(Pk))
+        out = F.leaky_relu(self.fc2(out))
+        out = F.leaky_relu(self.fc4(out))
         out = self.fc5(out)
         return out

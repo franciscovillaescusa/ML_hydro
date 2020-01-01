@@ -23,9 +23,9 @@ kmin  = 7e-3 #h/Mpc
 kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
 
 # model parameters
-kpivot    = 0.5
+kpivot    = 2.0
 predict_C = False
-suffix    = 'BN_100x100x100x100_15000_2500-5000-7500_10000_12500_kpivot=0.5_noC'
+suffix    = '100x100x100_kpivot=%.2f_noC'%kpivot
 fout      = 'results/results_%s.txt'%suffix
 
 # architecture parameters
@@ -35,12 +35,11 @@ hidden3 = 100
 hidden4 = 100
 
 # training parameters
-epochs           = 15000
-batch_size_train = 32
-batch_size_valid = 64*100
-batch_size_test  = 64*100
-batches          = 100
-learning_rate    = 1e-7
+epochs           = 5000
+batch_size_train = 16
+batch_size_valid = 64*300
+batches          = 200
+learning_rate    = 1e-3
 
 plot_results = True
 #######################################################################################
@@ -59,15 +58,15 @@ for l in numbers:
     k_bins = int((kmax-kmin)/kF)
     k      = np.arange(2,k_bins+2)*kF #avoid k=kF as we will get some negative values
     Nk     = 4.0*np.pi*k**2*kF/kF**3  #number of modes in each k-bin
-    
-    # get a validation dataset
-    valid_data, valid_label = data.dataset(k, Nk, kpivot, batch_size_valid, predict_C)
-    
+
     # find the number of neurons in the output layer and define loss
     if predict_C:  last_layer = 3
     else:          last_layer = 2
+    
+    # get the validation dataset and the loss function
+    valid_data, valid_label = data.dataset(k, Nk, kpivot, batch_size_valid, predict_C)
     loss_func = nn.MSELoss()
-
+    
     # do a loop over the different epochs
     loss_train = np.zeros(epochs, dtype=np.float64)
     loss_valid = np.zeros(epochs, dtype=np.float64)
@@ -83,26 +82,28 @@ for l in numbers:
         net.eval() 
         with torch.no_grad():
             pred = net(valid_data)
-        min_valid = loss_func(pred, valid_label.T)
+        min_valid = loss_func(pred, valid_label)
         print('min valid = %.3e'%min_valid)
     else:
         min_valid = 1e7
     
-    optimizer = optim.Adam(net.parameters(), lr=learning_rate, betas=(0.9, 0.999),
-                           eps=1e-8, amsgrad=False)            
+    optimizer = optim.Adam(net.parameters(), lr=learning_rate, betas=(0.5, 0.999),
+                           eps=1e-8, amsgrad=True)            
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.3, 
-                                                           patience=50, verbose=True)
+                                                           patience=50, min_lr=1e-6, verbose=True)
     
     # do a loop over the different epochs
     for epoch in range(epochs): 
 
         # training
+        train_data, train_label = data.dataset(k, Nk, kpivot, batch_size_train*batches, predict_C)
         total_loss = 0
         net.train()
         for batch in range(batches):
-            train_data, label = data.dataset(k, Nk, kpivot, batch_size_train, predict_C)
-            pred = net(train_data)
-            loss = loss_func(pred, label.T)
+            data_train = train_data[batch*batch_size_train:(batch+1)*batch_size_train]
+            label      = train_label[batch*batch_size_train:(batch+1)*batch_size_train]
+            pred = net(data_train)
+            loss = loss_func(pred, label)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -113,8 +114,8 @@ for l in numbers:
         net.eval() 
         with torch.no_grad():
             pred = net(valid_data)
-        loss_valid[epoch] = loss_func(pred, valid_label.T)
-
+        loss_valid[epoch] = loss_func(pred, valid_label)
+         
         # save model if it is better
         if loss_valid[epoch]<min_valid:
             print('saving model; kmax %.2f epoch %d; %.3e %.3e'\
