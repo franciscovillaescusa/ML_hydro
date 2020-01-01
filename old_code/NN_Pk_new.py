@@ -38,34 +38,49 @@ class Model(nn.Module):
         out = self.fc5(out)
         return out
     
-# create the data to train the network
+# create the data to train/validate/test the network
 def dataset(k, Nk, kpivot, batch_size, predict_C):
-    data  = np.empty((batch_size, k.shape[0]), dtype=np.float32)
-    if predict_C:  label = np.empty((batch_size,3), dtype=np.float32)
-    else:          label = np.empty((batch_size,2), dtype=np.float32)
+
+    # get the values of the parameters/labels
+    A  = (9.9*np.random.random(batch_size)+0.1)
+    B  = -1.0 + 1.0*np.random.random(batch_size)
+    C  = -0.5 + np.random.random(batch_size)
+    if predict_C:
+        label = np.array([A, B, C], dtype=np.float32)
+    else:
+        label = np.array([A, B],    dtype=np.float32)
+
+    # compute Pk
+    Pk = np.zeros((batch_size, k.shape[0]), dtype=np.float32)
+    for i in xrange(batch_size):
+        Pk[i] = A[i]*k**B[i]
+
+    # get the hydro Pk part
     indexes = np.where(k>kpivot)[0]
-    i = 0
-    while(i<batch_size):
-        A  = (9.9*np.random.random()+0.1)
-        B  = -1.0 + 1.0*np.random.random()
-        C  = -0.5 + np.random.random()
-        Pk = A*k**B
-        if len(indexes)>0:
-            A_value = Pk[indexes[0]]/k[indexes[0]]**C
-            Pk[indexes] = A_value*k[indexes]**C
-        dPk = np.sqrt(Pk**2/Nk)
-        Pk  = np.random.normal(loc=Pk, scale=dPk)
-        data[i] = np.log10(Pk) #Pk
-        if predict_C:  label[i] = [A, B, C]
-        else:          label[i] = [A, B]
-        i += 1
+    if len(indexes)>0:
+        A_value = Pk[:,indexes[0]]/k[indexes[0]]**C
+        for i in xrange(batch_size):
+            Pk[i,indexes] = A_value[i]*k[indexes]**C[i]
+
+    # add cosmic variance
+    dPk = np.sqrt(Pk**2/Nk)
+    Pk  = np.random.normal(loc=Pk, scale=dPk)
+
+    # save data to make plots
+    #Pk_plot = np.zeros((batch_size+1,k.shape[0]), dtype=np.float32)
+    #Pk_plot[0]  = k
+    #Pk_plot[1:] = Pk
+    #np.savetxt('borrar.txt', np.transpose(Pk_plot))
+    
+    # return data
+    data = np.log10(Pk).astype(np.float32) #Pk
     return torch.tensor(data),torch.tensor(label)
 
 
 ####################################### INPUT #########################################
 kmin   = 7e-3 #h/Mpc
-kmaxs  = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] #h/Mpc
-kpivot = 2.0
+kmaxs  = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
+kpivot = 0.5
 
 hidden1 = 100
 hidden2 = 100
