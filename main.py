@@ -35,13 +35,13 @@ hidden3 = 100
 hidden4 = 100
 
 # training parameters
-epochs           = 5000
+epochs           = 50000
 batch_size_train = 16
 batch_size_valid = 64*300
 batches          = 200
 learning_rate    = 1e-3
 
-plot_results = True
+plot_results = False
 #######################################################################################
 
 # find the numbers that each cpu will work with
@@ -89,8 +89,8 @@ for l in numbers:
     
     optimizer = optim.Adam(net.parameters(), lr=learning_rate, betas=(0.5, 0.999),
                            eps=1e-8, amsgrad=True)            
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.3, 
-                                                           patience=50, min_lr=1e-6, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.4, 
+                                                           patience=500, verbose=True)
     
     # do a loop over the different epochs
     for epoch in range(epochs): 

@@ -42,4 +42,4 @@ def dataset(k, Nk, kpivot, batch_size, predict_C):
     
     # return data
     data = np.log10(Pk, dtype=np.float32) #Pk
-    return torch.tensor(data), torch.tensor(label).T
+    return torch.tensor(data), torch.tensor(label).t()
