@@ -39,7 +39,8 @@ epochs           = 50000
 batch_size_train = 16
 batch_size_valid = 64*300
 batches          = 200
-learning_rate    = 1e-3
+max_lr           = 1e-4
+min_lr           = 1e-6
 
 plot_results = False
 #######################################################################################
@@ -87,10 +88,11 @@ for l in numbers:
     else:
         min_valid = 1e7
     
-    optimizer = optim.Adam(net.parameters(), lr=learning_rate, betas=(0.5, 0.999),
+    optimizer = optim.Adam(net.parameters(), lr=max_lr, betas=(0.5, 0.999),
                            eps=1e-8, amsgrad=True)            
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.4, 
-                                                           patience=500, verbose=True)
+                                                           patience=500, verbose=True,
+                                                           eps=min_lr)
     
     # do a loop over the different epochs
     for epoch in range(epochs): 
