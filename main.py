@@ -48,6 +48,10 @@ plot_results = False
 # find the numbers that each cpu will work with
 numbers = np.where(np.arange(len(kmaxs))%nprocs==myrank)[0]
 
+# find the number of neurons in the output layer and define loss
+if predict_C:  last_layer = 3
+else:          last_layer = 2
+
 # do a loop over the different kmax
 for l in numbers:
     
@@ -59,10 +63,6 @@ for l in numbers:
     k_bins = int((kmax-kmin)/kF)
     k      = np.arange(2,k_bins+2)*kF #avoid k=kF as we will get some negative values
     Nk     = 4.0*np.pi*k**2*kF/kF**3  #number of modes in each k-bin
-
-    # find the number of neurons in the output layer and define loss
-    if predict_C:  last_layer = 3
-    else:          last_layer = 2
     
     # get the validation dataset and the loss function
     valid_data, valid_label = data.dataset(k, Nk, kpivot, batch_size_valid, predict_C)

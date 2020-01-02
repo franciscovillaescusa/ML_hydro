@@ -34,14 +34,13 @@ def lnlike_theory(theta,x,y,dy):
 
 ####################################### INPUT #######################################
 # k-bins
-kmin   = 7e-3 #h/Mpc
-kmaxs  = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
-kpivot = 2.0
+kmin  = 7e-3 #h/Mpc
+kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
 
 # model parameters
-last_layer = 2
-predict_C  = False
-suffix     = 'BN_100x100x100_kpivot=2.0_noC'
+kpivot    = 2.0
+predict_C = False
+suffix    = '100x100x100_kpivot=%.2f_noC'%kpivot
 
 # architecture parameters
 hidden1 = 100
@@ -52,6 +51,10 @@ hidden4 = 100
 # training parameters
 test_set_size = 6400
 #####################################################################################
+
+# find the number of neurons in the output layer and define loss
+if predict_C:  last_layer = 3
+else:          last_layer = 2
 
 # define the arrays containing the errors on the parameters
 dA_LS = np.zeros(len(kmaxs), dtype=np.float64)
@@ -119,36 +122,15 @@ for l,kmax in enumerate(kmaxs):
         dA_NN[l] += (A_true - A_NN)**2
         dB_NN[l] += (B_true - B_NN)**2
         ###############################
-        
-        #print i
-        #print 'A=%.5f \t B=%.5f'%(A1,B1)
-        #print 'A=%.5f \t B=%.5f \t chi2=%.5f'%(A2,B2,chi2)
-        #print 'A=%.5f \t B=%.5f \t chi2=%.5f'%(A3,B3,chi2_NN)
-        #print ' '
-
-        #if chi2_NN<chi2:
-        #    print i, chi2, chi2_NN
-        #    raise Exception('chi2 of NN is better than standard chi2')
-
-        #np.savetxt('borrar.txt', np.transpose([k,Pk,dPk]))
 
     dA_LS[l] = np.sqrt(dA_LS[l]/test_set_size)
     dB_LS[l] = np.sqrt(dB_LS[l]/test_set_size)
     dA_NN[l] = np.sqrt(dA_NN[l]/test_set_size)
     dB_NN[l] = np.sqrt(dB_NN[l]/test_set_size)
     print('%.2f %.3e %.3e'%(kmax, dA_LS[l], dB_LS[l]))
-    print('%.2f %.3e %.3e'%(kmax, dA_NN[l], dB_NN[l]))
-    print('')
+    print('%.2f %.3e %.3e\n'%(kmax, dA_NN[l], dB_NN[l]))
     
-    #np.savetxt('chi2_values_0.03.txt', np.transpose([chi2_LS, chi2_NN]))
-
-    #np.savetxt('results_A_B_no_priors.txt',
-    #           np.transpose([A_results,  B_results,
-    #                         A1_results, B1_results,
-    #                         A2_results, B2_results]))
-
-    
-#np.savetxt('results_fit.txt', np.transpose([kmaxs, dA1, dB1, dA2, dB2]))
+np.savetxt('errors_fit.txt', np.transpose([kmaxs, dA_LS, dB_LS, dA_NN, dB_NN]))
 
 
 
