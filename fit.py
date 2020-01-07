@@ -40,16 +40,24 @@ kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-
 # model parameters
 kpivot    = 2.0
 predict_C = False
-suffix    = '100x100x100_kpivot=%.2f_noC'%kpivot
+#suffix    = '20x20x20_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
+#suffix    = '100x100x100_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
+#suffix    = '50x50x50_kpivot=%.2f_noC'%kpivot
+suffix    = 'Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3_kpivot=%.2f'%kpivot
 
 # architecture parameters
+model   = 'model1' #'model1', 'model0'
 hidden1 = 100
 hidden2 = 100
 hidden3 = 100
 hidden4 = 100
+hidden5 = 100
+hidden  = 30
 
 # training parameters
 test_set_size = 6400
+
+fout = 'errors_fit_30x30x30.txt'
 #####################################################################################
 
 # find the number of neurons in the output layer and define loss
@@ -81,8 +89,15 @@ for l,kmax in enumerate(kmaxs):
     # get a test dataset
     test_data, test_label = data.dataset(k, Nk, kpivot, test_set_size, predict_C)
     
-    # get the neural network architecture
-    net = architecture.Model(k.shape[0], hidden1, hidden2, hidden3, hidden4, last_layer)
+    # get the architecture
+    if   model=='model0':
+        net = architecture.Model(k.shape[0], hidden1, hidden2, hidden3, hidden4, 
+                                 hidden5, last_layer)
+    elif model=='model1':
+        net = architecture.Model1(k.shape[0], hidden, last_layer)
+    else:  raise Exception('Wrong model!')
+
+
     net.load_state_dict(torch.load('results/best_model_%s_kmax=%.2f.pt'%(suffix,kmax)))
     net.eval()
     
@@ -103,22 +118,21 @@ for l,kmax in enumerate(kmaxs):
         best_fit  = minimize(chi2_func, [A_true,B_true], args=(k, Pk_data, dPk_true),
                              method='Powell')
         theta_best_fit = best_fit["x"]
-        
-        # get results
         A_LS, B_LS = theta_best_fit
-        chi2_LS[i] = chi2_func(theta_best_fit, k, Pk_data, dPk_true)*1.0/ndof
 
-        # compute accumulated error
+        # compute chi2 and accumulated error
+        chi2_LS[i] = chi2_func(theta_best_fit, k, Pk_data, dPk_true)*1.0/ndof
         dA_LS[l] += (A_true - A_LS)**2
         dB_LS[l] += (B_true - B_LS)**2
         ###############################
         
         ####### NEURAL NETWORK ########
-        A_NN, B_NN = net(test_data[i])
-        A_NN, B_NN = A_NN.detach().numpy()*9.9 + 0.1, B_NN.detach().numpy()
-        chi2_NN[i] = chi2_func([A_NN, B_NN], k, Pk_data, dPk_true)*1.0/ndof
+        with torch.no_grad():
+            A_NN, B_NN = net(test_data[i])
+        A_NN, B_NN = A_NN.numpy()*9.9 + 0.1, B_NN.numpy()
         
-        # compute accumulated error
+        # compute chi2 and accumulated error
+        chi2_NN[i] = chi2_func([A_NN, B_NN], k, Pk_data, dPk_true)*1.0/ndof
         dA_NN[l] += (A_true - A_NN)**2
         dB_NN[l] += (B_true - B_NN)**2
         ###############################
@@ -128,9 +142,10 @@ for l,kmax in enumerate(kmaxs):
     dA_NN[l] = np.sqrt(dA_NN[l]/test_set_size)
     dB_NN[l] = np.sqrt(dB_NN[l]/test_set_size)
     print('%.2f %.3e %.3e'%(kmax, dA_LS[l], dB_LS[l]))
-    print('%.2f %.3e %.3e\n'%(kmax, dA_NN[l], dB_NN[l]))
-    
-np.savetxt('errors_fit.txt', np.transpose([kmaxs, dA_LS, dB_LS, dA_NN, dB_NN]))
+    print('%.2f %.3e %.3e'%(kmax, dA_NN[l], dB_NN[l]))
+    print('%.2f %.3f %.3f\n'%(kmax, dA_NN[l]/dA_LS[l], dB_NN[l]/dB_LS[l]))
+
+np.savetxt(fout, np.transpose([kmaxs, dA_LS, dB_LS, dA_NN, dB_NN]))
 
 
 
