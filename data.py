@@ -4,7 +4,7 @@ import sys,os
 
 
 # create the data to train/validate/test the network
-def dataset(k, Nk, kpivot, batch_size, predict_C):
+def dataset(k, Nk, kpivot, batch_size, predict_C, fix_A_value=True):
 
     # A goes from  0.1 to 10
     # B goes from -1.0 to 0.0
@@ -27,6 +27,8 @@ def dataset(k, Nk, kpivot, batch_size, predict_C):
     indexes = np.where(k>kpivot)[0]
     if len(indexes)>0:
         A_value = Pk[:,indexes[0]]/k[indexes[0]]**C
+        if not(fix_A_value):
+            A_value = A_value*(0.8 + np.random.random(batch_size)*0.4)
         for i in range(batch_size):
             Pk[i,indexes] = A_value[i]*k[indexes]**C[i]
 
