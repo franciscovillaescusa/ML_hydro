@@ -1,7 +1,3 @@
-# This scripts is an example of a MCMC fit. We generate points from a linear law
-# y = a*x+b and we add noise to them. We then try to obtain the values of a and b
-# from the data
-
 from mpi4py import MPI
 import numpy as np
 from scipy.optimize import minimize
@@ -41,34 +37,44 @@ def lnlike_theory(theta,x,y,dy):
 ####################################### INPUT #######################################
 # k-bins
 kmin  = 7e-3 #h/Mpc
-kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
+kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] #h/Mpc
 
 # model parameters
-kpivot    = 0.2
-predict_C = False
-#suffix    = '20x20x20_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
-#suffix    = '100x100x100_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
-#suffix    = '50x50x50_kpivot=%.2f_noC'%kpivot
-#suffix    = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4_kpivot=%.2f'%kpivot
-suffix    = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=1e-3_kpivot=%.2f'%kpivot
-
-# architecture parameters
-model   = 'model1' #'model1', 'model0'
-hidden1 = 100
-hidden2 = 100
-hidden3 = 100
-hidden4 = 100
-hidden5 = 100
-hidden  = 30
-
-# training parameters
-test_set_size = 10000
+kpivot      = 2.0
+predict_C   = False
+fix_A_value = True #whether fix A_value for kpivot or not
 
 # whether do the least-squares fit
-do_LS = False
+do_LS = True
 
-fout = 'errors_fit_30x30x30_kpivot=0.2.txt'
+model_folder = 'Pk-30-30-30-2_kpivot=%.2f'%kpivot 
+
+# for kpivot=2.0
+#suffix = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4'
+#fout   = 'results/fit_errors/errors_Pk-30-30-30-2'
+suffix = 'Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3'
+fout   = 'results/fit_errors/errors_model2_Pk-30-30-30-2'
+
+# for kpivot!=2.0
+#suffix = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=1e-3'
+#fout   = 'results/fit_errors/errors_Pk-30-30-30-2'
+
+# architecture parameters
+model  = 'model1' #'model1', 'model0'
+hidden = 30
+
+# training parameters
+test_set_size = 25000
 #####################################################################################
+
+# find suffix and fout
+suffix = '%s_kpivot=%.2f'%(suffix,kpivot)
+fout   = '%s_kpivot=%.2f'%(fout,kpivot)
+if not(fix_A_value):  
+    suffix = '%s_varied_A'%suffix
+    fout   = '%s_varied_A'%fout
+fout += '.txt'
+
 
 # find the numbers that each cpu will work with                  
 numbers = np.where(np.arange(len(kmaxs))%nprocs==myrank)[0]
@@ -121,7 +127,8 @@ for l in numbers:
     else:  raise Exception('Wrong model!')
 
     # load best model
-    net.load_state_dict(torch.load('results/best_model_%s_kmax=%.2f.pt'%(suffix,kmax)))
+    net.load_state_dict(torch.load('results/models/%s/best_model_%s_kmax=%.2f.pt'\
+                                   %(model_folder,suffix,kmax)))
     
     # fit results to a power law
     for i in range(test_set_size):
@@ -180,7 +187,7 @@ if do_LS:
 
 if myrank==0:
     if do_LS:
-        np.savetxt(fout, np.transpose([kmaxs, dA_LS_R, dB_LS_R, dA_NN_R, dB_NN_R]))
+        np.savetxt(fout, np.transpose([kmaxs, dA_NN_R, dB_NN_R, dA_LS_R, dB_LS_R]))
     else:
         np.savetxt(fout, np.transpose([kmaxs, dA_NN_R, dB_NN_R]))
 

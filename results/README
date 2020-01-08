@@ -1,0 +1,13 @@
+The best models for kpivot=2.00 are
+1) Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4_kpivot=2.00
+2) Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3_kpivot=2.00
+
+These models were trained for more than 100,000 epochs using the above learning rate
+When the validation loss were below ~4.5e-7 I retrained them (starting from best-model)
+using a learning rate 10x smaller. At that time I increased the size of the validation 
+set by a factor of 10. I decreases the learning rate a bit more after validation loss
+flattened.
+
+There are other models for kpivot=2.00 that give slightly worse performance, but that 
+can be improved with more training.
+
