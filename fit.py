@@ -2,6 +2,7 @@
 # y = a*x+b and we add noise to them. We then try to obtain the values of a and b
 # from the data
 
+from mpi4py import MPI
 import numpy as np
 from scipy.optimize import minimize
 import sys,os
@@ -10,6 +11,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import architecture
 import data
+
+###### MPI DEFINITIONS ######                                    
+comm   = MPI.COMM_WORLD
+nprocs = comm.Get_size()
+myrank = comm.Get_rank()
 
 
 # This function returns the predicted y-values for the particular model considered
@@ -38,12 +44,13 @@ kmin  = 7e-3 #h/Mpc
 kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-1] #h/Mpc
 
 # model parameters
-kpivot    = 2.0
+kpivot    = 0.2
 predict_C = False
 #suffix    = '20x20x20_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
 #suffix    = '100x100x100_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
 #suffix    = '50x50x50_kpivot=%.2f_noC'%kpivot
-suffix    = 'Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3_kpivot=%.2f'%kpivot
+#suffix    = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4_kpivot=%.2f'%kpivot
+suffix    = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=1e-3_kpivot=%.2f'%kpivot
 
 # architecture parameters
 model   = 'model1' #'model1', 'model0'
@@ -55,26 +62,42 @@ hidden5 = 100
 hidden  = 30
 
 # training parameters
-test_set_size = 6400
+test_set_size = 10000
 
-fout = 'errors_fit_30x30x30.txt'
+# whether do the least-squares fit
+do_LS = False
+
+fout = 'errors_fit_30x30x30_kpivot=0.2.txt'
 #####################################################################################
+
+# find the numbers that each cpu will work with                  
+numbers = np.where(np.arange(len(kmaxs))%nprocs==myrank)[0]
 
 # find the number of neurons in the output layer and define loss
 if predict_C:  last_layer = 3
 else:          last_layer = 2
 
 # define the arrays containing the errors on the parameters
-dA_LS = np.zeros(len(kmaxs), dtype=np.float64)
-dB_LS = np.zeros(len(kmaxs), dtype=np.float64)
-dA_NN = np.zeros(len(kmaxs), dtype=np.float64)
-dB_NN = np.zeros(len(kmaxs), dtype=np.float64)
+dA_NN   = np.zeros(len(kmaxs), dtype=np.float64)
+dA_NN_R = np.zeros(len(kmaxs), dtype=np.float64)
+dB_NN   = np.zeros(len(kmaxs), dtype=np.float64)
+dB_NN_R = np.zeros(len(kmaxs), dtype=np.float64)
+
+if do_LS:
+    dA_LS   = np.zeros(len(kmaxs), dtype=np.float64)
+    dA_LS_R = np.zeros(len(kmaxs), dtype=np.float64)
+    dB_LS   = np.zeros(len(kmaxs), dtype=np.float64)
+    dB_LS_R = np.zeros(len(kmaxs), dtype=np.float64)
+
 
 # define the chi2 function
 chi2_func = lambda *args: -lnlike_theory(*args)
 
 # do a loop over the different kmax
-for l,kmax in enumerate(kmaxs):
+for l in numbers:
+
+    # get the value of kmax
+    kmax = kmaxs[l]
 
     # define the arrays containing the values of the chi2
     chi2_LS, chi2_NN = np.zeros(test_set_size), np.zeros(test_set_size)
@@ -97,9 +120,8 @@ for l,kmax in enumerate(kmaxs):
         net = architecture.Model1(k.shape[0], hidden, last_layer)
     else:  raise Exception('Wrong model!')
 
-
+    # load best model
     net.load_state_dict(torch.load('results/best_model_%s_kmax=%.2f.pt'%(suffix,kmax)))
-    net.eval()
     
     # fit results to a power law
     for i in range(test_set_size):
@@ -114,19 +136,21 @@ for l,kmax in enumerate(kmaxs):
         dPk_true      = np.sqrt(Pk_true**2/Nk)
 
         ######## LEAST SQUARES ########
-        # fit data to function
-        best_fit  = minimize(chi2_func, [A_true,B_true], args=(k, Pk_data, dPk_true),
-                             method='Powell')
-        theta_best_fit = best_fit["x"]
-        A_LS, B_LS = theta_best_fit
+        if do_LS:
+            # fit data to function
+            best_fit  = minimize(chi2_func, [A_true,B_true], args=(k, Pk_data, dPk_true),
+                                 method='Powell')
+            theta_best_fit = best_fit["x"]
+            A_LS, B_LS = theta_best_fit
 
-        # compute chi2 and accumulated error
-        chi2_LS[i] = chi2_func(theta_best_fit, k, Pk_data, dPk_true)*1.0/ndof
-        dA_LS[l] += (A_true - A_LS)**2
-        dB_LS[l] += (B_true - B_LS)**2
+            # compute chi2 and accumulated error
+            chi2_LS[i] = chi2_func(theta_best_fit, k, Pk_data, dPk_true)*1.0/ndof
+            dA_LS[l] += (A_true - A_LS)**2
+            dB_LS[l] += (B_true - B_LS)**2
         ###############################
         
         ####### NEURAL NETWORK ########
+        net.eval()
         with torch.no_grad():
             A_NN, B_NN = net(test_data[i])
         A_NN, B_NN = A_NN.numpy()*9.9 + 0.1, B_NN.numpy()
@@ -137,16 +161,28 @@ for l,kmax in enumerate(kmaxs):
         dB_NN[l] += (B_true - B_NN)**2
         ###############################
 
-    dA_LS[l] = np.sqrt(dA_LS[l]/test_set_size)
-    dB_LS[l] = np.sqrt(dB_LS[l]/test_set_size)
     dA_NN[l] = np.sqrt(dA_NN[l]/test_set_size)
     dB_NN[l] = np.sqrt(dB_NN[l]/test_set_size)
-    print('%.2f %.3e %.3e'%(kmax, dA_LS[l], dB_LS[l]))
     print('%.2f %.3e %.3e'%(kmax, dA_NN[l], dB_NN[l]))
-    print('%.2f %.3f %.3f\n'%(kmax, dA_NN[l]/dA_LS[l], dB_NN[l]/dB_LS[l]))
 
-np.savetxt(fout, np.transpose([kmaxs, dA_LS, dB_LS, dA_NN, dB_NN]))
+    if do_LS:
+        dA_LS[l] = np.sqrt(dA_LS[l]/test_set_size)
+        dB_LS[l] = np.sqrt(dB_LS[l]/test_set_size)
+        print('%.2f %.3e %.3e'%(kmax, dA_LS[l], dB_LS[l]))
+        print('%.2f %.3f %.3f\n'%(kmax, dA_NN[l]/dA_LS[l], dB_NN[l]/dB_LS[l]))
 
+# combine results from all cpus
+comm.Reduce(dA_NN, dA_NN_R, root=0)
+comm.Reduce(dB_NN, dB_NN_R, root=0)
+if do_LS:
+    comm.Reduce(dA_LS, dA_LS_R, root=0)
+    comm.Reduce(dB_LS, dB_LS_R, root=0)
+
+if myrank==0:
+    if do_LS:
+        np.savetxt(fout, np.transpose([kmaxs, dA_LS_R, dB_LS_R, dA_NN_R, dB_NN_R]))
+    else:
+        np.savetxt(fout, np.transpose([kmaxs, dA_NN_R, dB_NN_R]))
 
 
 
