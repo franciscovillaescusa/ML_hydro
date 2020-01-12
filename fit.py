@@ -50,10 +50,10 @@ do_LS = True
 model_folder = 'Pk-30-30-30-2_kpivot=%.2f'%kpivot 
 
 # for kpivot=2.0
-#suffix = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4'
-#fout   = 'results/fit_errors/errors_Pk-30-30-30-2'
-suffix = 'Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3'
-fout   = 'results/fit_errors/errors_model2_Pk-30-30-30-2'
+suffix = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4'
+fout   = 'results/fit_errors/errors_Pk-30-30-30-2'
+#suffix = 'Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3'
+#fout   = 'results/fit_errors/errors_model2_Pk-30-30-30-2'
 
 # for kpivot!=2.0
 #suffix = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=1e-3'
@@ -64,7 +64,7 @@ model  = 'model1' #'model1', 'model0'
 hidden = 30
 
 # training parameters
-test_set_size = 25000
+test_set_size = 15000
 #####################################################################################
 
 # find suffix and fout

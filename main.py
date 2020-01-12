@@ -25,6 +25,8 @@ kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] #h/
 kpivot       = 0.2
 predict_C    = False
 fix_A_value  = False #whether fix A_value for kpivot or not
+#suffix       = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=5e-4'
+#suffix       = 'Pk-30-30-30-2_BS=256_batches=32_noSche_Adam_lr=1e-3'
 suffix       = 'Pk-30-30-30-2_BS=128_batches=64_noSche_Adam_lr=1e-3'
 model_folder = 'Pk-30-30-30-2_kpivot=%.2f'%kpivot 
 
@@ -42,7 +44,7 @@ epochs           = 500000
 batch_size_train = 256
 batch_size_valid = 64*3000
 batches          = 32 #64
-max_lr           = 1e-4
+max_lr           = 3e-5
 min_lr           = 1e-7  #only for scheduler
 wd               = 0.0
 
