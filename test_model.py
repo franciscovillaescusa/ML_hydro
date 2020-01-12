@@ -16,18 +16,19 @@ kmaxs = [0.03, 0.05, 0.07, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0][::-
 # model parameters
 kpivot    = 2.0
 predict_C = False
-suffix    = '100x100x100_kpivot=%.2f_noC'%kpivot
+suffix    = '100x100x100_BS=128_noSche_Adam1_kpivot=%.2f_noC'%kpivot
 
 # architecture parameters
 hidden1 = 100
 hidden2 = 100
 hidden3 = 100
 hidden4 = 100
+hidden5 = 100
 
 # training parameters
 batch_size_test  = 70000
 
-fout = 'errors.txt'
+fout = 'errors_%s.txt'%suffix
 ##################################################################################
 
 # verbose
@@ -51,7 +52,8 @@ for kmax in kmaxs:
     test_data, test_label = data.dataset(k, Nk, kpivot, batch_size_test, predict_C)
 
     # get architecture and load best-model
-    net = architecture.Model(k.shape[0],hidden1,hidden2,hidden3,hidden4,last_layer)
+    net = architecture.Model(k.shape[0],hidden1,hidden2,hidden3,hidden4,hidden5, 
+                             last_layer)
     fmodel = 'results/best_model_%s_kmax=%.2f.pt'%(suffix,kmax)
     net.load_state_dict(torch.load(fmodel))
 
