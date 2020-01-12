@@ -118,46 +118,63 @@ rcParams["mathtext.fontset"]='cm'
 x_min, x_max = 2.5e-2, 1.1
 y_min, y_max = 7e-4, 12
 
-
-fig=figure()
-ax1=fig.add_subplot(111) 
-
-ax1.set_xscale('log')
-ax1.set_yscale('log')
-
-ax1.set_xlim([x_min,x_max])
-ax1.set_ylim([y_min,y_max])
-
-ax1.set_xlabel(r'$k\/[h\/{\rm Mpc}^{-1}]$',fontsize=18)
-ax1.set_ylabel(r'$\sigma$',fontsize=18)
-
-
-f_out='LS_vs_NN_no_priors.pdf'
+f_out='Toy_model.pdf'
 
 f1 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=2.00.txt'
+f2 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=0.50_varied_A.txt'
+f3 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=0.50.txt'
+k1, dA_NN1, dB_NN1, dA_LS, dB_LS = np.loadtxt(f1,unpack=True)
+k2, dA_NN2, dB_NN2                 = np.loadtxt(f2,unpack=True)
+k3, dA_NN3, dB_NN3                 = np.loadtxt(f3,unpack=True) 
 
-k,dA_NN, dB_NN, dA_LS, dB_LS = np.loadtxt(f1,unpack=True) 
+fig=figure(figsize=(15,6))
+ax1=fig.add_subplot(121)
+ax2=fig.add_subplot(122) 
 
-p1,=ax1.plot(k,dA_NN,linestyle='-',marker='None', c='r')
-p2,=ax1.plot(k,dB_NN,linestyle='-',marker='None', c='b')
-p3,=ax1.plot(k,dA_LS,linestyle='--',marker='None', c='r')
-p4,=ax1.plot(k,dB_LS,linestyle='--',marker='None', c='b')
+for ax in [ax1,ax2]:
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    
+    ax.set_xlim([x_min,x_max])
+    ax.set_ylim([y_min,y_max])
+
+    ax.set_xlabel(r'$k_{\rm max}\/[h\/{\rm Mpc}^{-1}]$',fontsize=18)
+    ax.set_ylabel(r'${\rm error}$',fontsize=22)
+
+p1,=ax1.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
+p2,=ax1.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
+p3,=ax1.plot(k1,dA_LS, linestyle='--',marker='None', c='r')
+p4,=ax1.plot(k1,dB_LS, linestyle='--',marker='None', c='b')
+
+p5,= ax2.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
+p6,= ax2.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
+p7,= ax2.plot(k2,dA_NN2,linestyle='-.',marker='None', c='r')
+p8,= ax2.plot(k2,dB_NN2,linestyle='-.',marker='None', c='b')
+p9,= ax2.plot(k3,dA_NN3,linestyle=':',marker='None', c='r')
+p10,=ax2.plot(k3,dB_NN3,linestyle=':',marker='None', c='b')
 
 
 #place a label in the plot
-#ax1.text(0.2,0.1, r"$z=4.0$", fontsize=22, color='k')
+ax1.text(3e-2,2e-3, 'no baryon effects', fontsize=18, color='k')
+ax2.text(3e-2,2e-3, 'neural networks', fontsize=18, color='k')
 
 #legend
-ax1.legend([p1,p2,p3,p4],
+ax1.legend([p1,p3,p2,p4],
            [r"$A:\,\,{\rm neural\,network}$",
-            r"$B:\,\,{\rm neural\,network}$",
             r"$A:\,\,{\rm least\,squares}$",
+            r"$B:\,\,{\rm neural\,network}$",
             r"$B:\,\,{\rm least\,squares}$"],
-           loc=0,prop={'size':15},ncol=1,frameon=True)
-            
-            #columnspacing=2,labelspacing=2)
+           loc=0,prop={'size':14.7},ncol=1,frameon=True)
 
 
+ax2.legend([p5,p7,p9,p6,p8,p10],
+           [r"$A:\,\,{\rm no\,baryons}$",
+            r"$A:\,\,{\rm model\,1}$",
+            r"$A:\,\,{\rm model\,2}$",
+            r"$B:\,\,{\rm no\,baryons}$",
+            r"$B:\,\,{\rm model\,1}$",
+            r"$B:\,\,{\rm model\,2}$"],
+           loc=0,prop={'size':14.7},ncol=2,frameon=True)
 
 
 #ax1.set_title(r'$\sum m_\nu=0.0\/{\rm eV}$',position=(0.5,1.02),size=18)
