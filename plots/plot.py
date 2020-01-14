@@ -155,8 +155,8 @@ p10,=ax2.plot(k3,dB_NN3,linestyle=':',marker='None', c='b')
 
 
 #place a label in the plot
-ax1.text(3e-2,2e-3, 'no baryon effects', fontsize=18, color='k')
-ax2.text(3e-2,2e-3, 'neural networks', fontsize=18, color='k')
+ax1.text(3e-2,2e-3, 'model 0: no baryon effects', fontsize=17, color='k')
+ax2.text(3e-2,2e-3, 'neural networks', fontsize=17, color='k')
 
 #legend
 ax1.legend([p1,p3,p2,p4],
@@ -164,17 +164,17 @@ ax1.legend([p1,p3,p2,p4],
             r"$A:\,\,{\rm least\,squares}$",
             r"$B:\,\,{\rm neural\,network}$",
             r"$B:\,\,{\rm least\,squares}$"],
-           loc=0,prop={'size':14.7},ncol=1,frameon=True)
+           loc=0,prop={'size':15},ncol=1,frameon=True)
 
 
 ax2.legend([p5,p7,p9,p6,p8,p10],
-           [r"$A:\,\,{\rm no\,baryons}$",
+           [r"$A:\,\,{\rm model\,0}$",
             r"$A:\,\,{\rm model\,1}$",
             r"$A:\,\,{\rm model\,2}$",
-            r"$B:\,\,{\rm no\,baryons}$",
+            r"$B:\,\,{\rm model\,0}$",
             r"$B:\,\,{\rm model\,1}$",
             r"$B:\,\,{\rm model\,2}$"],
-           loc=0,prop={'size':14.7},ncol=2,frameon=True)
+           loc=0,prop={'size':15},ncol=2,frameon=True)
 
 
 #ax1.set_title(r'$\sum m_\nu=0.0\/{\rm eV}$',position=(0.5,1.02),size=18)
