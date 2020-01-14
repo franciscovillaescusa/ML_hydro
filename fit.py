@@ -64,7 +64,9 @@ model  = 'model1' #'model1', 'model0'
 hidden = 30
 
 # training parameters
-test_set_size = 15000
+test_set_size = 30000
+
+write_AB_file = False
 #####################################################################################
 
 # find suffix and fout
@@ -88,6 +90,11 @@ dA_NN   = np.zeros(len(kmaxs), dtype=np.float64)
 dA_NN_R = np.zeros(len(kmaxs), dtype=np.float64)
 dB_NN   = np.zeros(len(kmaxs), dtype=np.float64)
 dB_NN_R = np.zeros(len(kmaxs), dtype=np.float64)
+
+AA_NN = np.zeros(test_set_size, dtype=np.float32)
+BB_NN = np.zeros(test_set_size, dtype=np.float32)
+AA_LS = np.zeros(test_set_size, dtype=np.float32)
+BB_LS = np.zeros(test_set_size, dtype=np.float32)
 
 if do_LS:
     dA_LS   = np.zeros(len(kmaxs), dtype=np.float64)
@@ -149,6 +156,7 @@ for l in numbers:
                                  method='Powell')
             theta_best_fit = best_fit["x"]
             A_LS, B_LS = theta_best_fit
+            AA_LS[i], BB_LS[i] = A_LS, B_LS
 
             # compute chi2 and accumulated error
             chi2_LS[i] = chi2_func(theta_best_fit, k, Pk_data, dPk_true)*1.0/ndof
@@ -161,7 +169,8 @@ for l in numbers:
         with torch.no_grad():
             A_NN, B_NN = net(test_data[i])
         A_NN, B_NN = A_NN.numpy()*9.9 + 0.1, B_NN.numpy()
-        
+        AA_NN[i], BB_NN[i] = A_NN, B_NN        
+
         # compute chi2 and accumulated error
         chi2_NN[i] = chi2_func([A_NN, B_NN], k, Pk_data, dPk_true)*1.0/ndof
         dA_NN[l] += (A_true - A_NN)**2
@@ -177,6 +186,11 @@ for l in numbers:
         dB_LS[l] = np.sqrt(dB_LS[l]/test_set_size)
         print('%.2f %.3e %.3e'%(kmax, dA_LS[l], dB_LS[l]))
         print('%.2f %.3f %.3f\n'%(kmax, dA_NN[l]/dA_LS[l], dB_NN[l]/dB_LS[l]))
+
+    if write_AB_file:
+        np.savetxt('results/AB_values/AB_values_kmax=%.2f.txt'%kmax, 
+                   np.transpose([AA_NN, BB_NN, AA_LS, BB_LS]))
+        
 
 # combine results from all cpus
 comm.Reduce(dA_NN, dA_NN_R, root=0)
