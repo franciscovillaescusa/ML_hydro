@@ -115,66 +115,104 @@ rcParams["mathtext.fontset"]='cm'
 #ax1.add_artist(polygon)
 ####################################################################
 
-x_min, x_max = 2.5e-2, 1.1
+x_min, x_max = 1e-2, 1.1
 y_min, y_max = 7e-4, 12
 
-f_out='Toy_model.pdf'
+kmin = 7e-3
+kmax = 2.0
 
-f1 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=2.00.txt'
-f2 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=0.50_varied_A.txt'
-f3 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=0.50.txt'
-k1, dA_NN1, dB_NN1, dA_LS, dB_LS = np.loadtxt(f1,unpack=True)
-k2, dA_NN2, dB_NN2                 = np.loadtxt(f2,unpack=True)
-k3, dA_NN3, dB_NN3                 = np.loadtxt(f3,unpack=True) 
+f_out = 'Toy_model_Pk.pdf'
 
-fig=figure(figsize=(15,6))
-ax1=fig.add_subplot(121)
-ax2=fig.add_subplot(122) 
+fig = figure()
+ax1 = fig.add_subplot(111)
 
-for ax in [ax1,ax2]:
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+ax1.set_xscale('log')
+ax1.set_yscale('log')
     
-    ax.set_xlim([x_min,x_max])
-    ax.set_ylim([y_min,y_max])
+ax1.set_xlim([x_min,x_max])
+#ax1.set_ylim([y_min,y_max])
 
-    ax.set_xlabel(r'$k_{\rm max}\/[h\/{\rm Mpc}^{-1}]$',fontsize=18)
-    ax.set_ylabel(r'${\rm error}$',fontsize=22)
-
-p1,=ax1.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
-p2,=ax1.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
-p3,=ax1.plot(k1,dA_LS, linestyle='--',marker='None', c='r')
-p4,=ax1.plot(k1,dB_LS, linestyle='--',marker='None', c='b')
-
-p5,= ax2.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
-p6,= ax2.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
-p7,= ax2.plot(k2,dA_NN2,linestyle='-.',marker='None', c='r')
-p8,= ax2.plot(k2,dB_NN2,linestyle='-.',marker='None', c='b')
-p9,= ax2.plot(k3,dA_NN3,linestyle=':',marker='None', c='r')
-p10,=ax2.plot(k3,dB_NN3,linestyle=':',marker='None', c='b')
+ax1.set_xlabel(r'$k_{\rm max}\/[h\/{\rm Mpc}^{-1}]$',fontsize=18)
+ax1.set_ylabel(r'$P(k)\,[(h^{-1}{\rm Mpc})^3]$',fontsize=22)
 
 
-#place a label in the plot
-ax1.text(3e-2,2e-3, 'model 0: no baryon effects', fontsize=17, color='k')
-ax2.text(3e-2,2e-3, 'neural networks', fontsize=17, color='k')
+
+
+seed = 5
+
+
+np.random.seed(seed)
+
+# find the fundamental frequency, the number of bins up to kmax and the k-array
+kF     = kmin
+k_bins = int((kmax-kmin)/kF)
+k      = np.arange(2,k_bins+2)*kF #avoid k=kF as we will get some negative values
+Nk     = 4.0*np.pi*k**2*kF/kF**3  #number of modes in each k-bin
+
+
+# model 0 
+A = 5.0
+B = -0.6
+Pk = A*k**B
+dPk = np.sqrt(Pk**2/Nk)
+Pk  = np.random.normal(loc=Pk, scale=dPk)
+p1,=ax1.plot(k,Pk,linestyle='-',marker='None', c='r')
+
+
+
+
+# model 1
+A = 6.0
+B = -0.8
+D = 0.5
+kpivot = 0.5
+fix_A_value = True
+
+# get the hydro Pk part
+Pk = A*k**B
+indexes = np.where(k>kpivot)[0]
+if len(indexes)>0:
+    A_value = Pk[indexes[0]]/k[indexes[0]]**D
+    if not(fix_A_value):
+        A_value = A_value*(0.8 + np.random.random()*0.4)
+Pk[indexes] = A_value*k[indexes]**D
+dPk = np.sqrt(Pk**2/Nk)
+Pk  = np.random.normal(loc=Pk, scale=dPk)
+p2,=ax1.plot(k,Pk,linestyle='-',marker='None', c='b')
+
+
+
+# model 2
+A = 5.0
+B = -0.1
+D = -0.5
+kpivot = 0.5
+fix_A_value = False
+
+# get the hydro Pk part
+Pk = A*k**B
+indexes  = np.where(k>kpivot)[0]
+indexes2 = np.where(k<kpivot)[0]
+if len(indexes)>0:
+    A_value = Pk[indexes[0]]/k[indexes[0]]**D
+    if not(fix_A_value):
+        A_value = A_value*(0.8 + np.random.random()*0.4)
+Pk[indexes] = A_value*k[indexes]**D
+dPk = np.sqrt(Pk**2/Nk)
+Pk  = np.random.normal(loc=Pk, scale=dPk)
+p3,=ax1.plot(k[indexes2],Pk[indexes2],linestyle='-',marker='None', c='g')
+p3,=ax1.plot(k[indexes],Pk[indexes],linestyle='-',marker='None', c='g')
+
+
+
 
 #legend
-ax1.legend([p1,p3,p2,p4],
-           [r"$A:\,\,{\rm neural\,\,network}$",
-            r"$A:\,\,{\rm max\,\,likelihood}$",
-            r"$B:\,\,{\rm neural\,\,network}$",
-            r"$B:\,\,{\rm max\,\,likelihood}$"],
+ax1.legend([p1,p3,p2],
+           [r"${\rm model\,\,0}$",
+            r"${\rm model\,\,1}$",
+            r"${\rm model\,\,2}$"],
            loc=0,prop={'size':15},ncol=1,frameon=True)
 
-
-ax2.legend([p5,p7,p9,p6,p8,p10],
-           [r"$A:\,\,{\rm model\,0}$",
-            r"$A:\,\,{\rm model\,1}$",
-            r"$A:\,\,{\rm model\,2}$",
-            r"$B:\,\,{\rm model\,0}$",
-            r"$B:\,\,{\rm model\,1}$",
-            r"$B:\,\,{\rm model\,2}$"],
-           loc=0,prop={'size':15},ncol=2,frameon=True)
 
 
 #ax1.set_title(r'$\sum m_\nu=0.0\/{\rm eV}$',position=(0.5,1.02),size=18)

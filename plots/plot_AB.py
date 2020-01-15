@@ -115,67 +115,36 @@ rcParams["mathtext.fontset"]='cm'
 #ax1.add_artist(polygon)
 ####################################################################
 
-x_min, x_max = 2.5e-2, 1.1
-y_min, y_max = 7e-4, 12
+x_min, x_max = 0, 20.0
+y_min, y_max = -1.5, 0.3
 
-f_out='Toy_model.pdf'
+f_out='AB_values.pdf'
 
-f1 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=2.00.txt'
-f2 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=0.50_varied_A.txt'
-f3 = '../results/fit_errors/errors_Pk-30-30-30-2_kpivot=0.50.txt'
-k1, dA_NN1, dB_NN1, dA_LS, dB_LS = np.loadtxt(f1,unpack=True)
-k2, dA_NN2, dB_NN2                 = np.loadtxt(f2,unpack=True)
-k3, dA_NN3, dB_NN3                 = np.loadtxt(f3,unpack=True) 
+f1 = '../results/AB_values/AB_values_kmax=0.03.txt'
+A_NN, B_NN, A_LS, B_LS = np.loadtxt(f1,unpack=True)
 
-fig=figure(figsize=(15,6))
-ax1=fig.add_subplot(121)
-ax2=fig.add_subplot(122) 
+fig=figure(figsize=(6,9))
+ax1=fig.add_subplot(211)
+ax2=fig.add_subplot(212)
+subplots_adjust(left=None, bottom=None, right=None, top=None,
+                wspace=0.0, hspace=0.07)
 
 for ax in [ax1,ax2]:
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+#    ax.set_xscale('log')
+#    ax.set_yscale('log')
     
     ax.set_xlim([x_min,x_max])
     ax.set_ylim([y_min,y_max])
 
-    ax.set_xlabel(r'$k_{\rm max}\/[h\/{\rm Mpc}^{-1}]$',fontsize=18)
-    ax.set_ylabel(r'${\rm error}$',fontsize=22)
+    ax.set_xlabel(r'$A$',fontsize=18)
+    ax.set_ylabel(r'$B$',fontsize=22)
 
-p1,=ax1.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
-p2,=ax1.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
-p3,=ax1.plot(k1,dA_LS, linestyle='--',marker='None', c='r')
-p4,=ax1.plot(k1,dB_LS, linestyle='--',marker='None', c='b')
-
-p5,= ax2.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
-p6,= ax2.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
-p7,= ax2.plot(k2,dA_NN2,linestyle='-.',marker='None', c='r')
-p8,= ax2.plot(k2,dB_NN2,linestyle='-.',marker='None', c='b')
-p9,= ax2.plot(k3,dA_NN3,linestyle=':',marker='None', c='r')
-p10,=ax2.plot(k3,dB_NN3,linestyle=':',marker='None', c='b')
+ax1.hexbin(A_NN, B_NN, gridsize=50, extent=(x_min,x_max,y_min,y_max), cmap='gnuplot2_r')
+ax2.hexbin(A_LS, B_LS, gridsize=50, extent=(x_min,x_max,y_min,y_max), cmap='gnuplot2_r')
 
 
-#place a label in the plot
-ax1.text(3e-2,2e-3, 'model 0: no baryon effects', fontsize=17, color='k')
-ax2.text(3e-2,2e-3, 'neural networks', fontsize=17, color='k')
-
-#legend
-ax1.legend([p1,p3,p2,p4],
-           [r"$A:\,\,{\rm neural\,\,network}$",
-            r"$A:\,\,{\rm max\,\,likelihood}$",
-            r"$B:\,\,{\rm neural\,\,network}$",
-            r"$B:\,\,{\rm max\,\,likelihood}$"],
-           loc=0,prop={'size':15},ncol=1,frameon=True)
-
-
-ax2.legend([p5,p7,p9,p6,p8,p10],
-           [r"$A:\,\,{\rm model\,0}$",
-            r"$A:\,\,{\rm model\,1}$",
-            r"$A:\,\,{\rm model\,2}$",
-            r"$B:\,\,{\rm model\,0}$",
-            r"$B:\,\,{\rm model\,1}$",
-            r"$B:\,\,{\rm model\,2}$"],
-           loc=0,prop={'size':15},ncol=2,frameon=True)
-
+ax1.text(11,-1.3, 'Neural network', fontsize=17, color='k')
+ax2.text(11,-1.3, 'Max likelihood', fontsize=17, color='k')
 
 #ax1.set_title(r'$\sum m_\nu=0.0\/{\rm eV}$',position=(0.5,1.02),size=18)
 #title('About as simple as it gets, folks')
