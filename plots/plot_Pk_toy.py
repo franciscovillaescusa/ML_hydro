@@ -208,9 +208,9 @@ p3,=ax1.plot(k[indexes],Pk[indexes],linestyle='-',marker='None', c='g')
 
 #legend
 ax1.legend([p1,p3,p2],
-           [r"${\rm model\,\,0}$",
-            r"${\rm model\,\,1}$",
-            r"${\rm model\,\,2}$"],
+           [r"${\rm AstroNo}$",
+            r"${\rm AstroDis}$",
+            r"${\rm AstroCon}$"],
            loc=0,prop={'size':15},ncol=1,frameon=True)
 
 
