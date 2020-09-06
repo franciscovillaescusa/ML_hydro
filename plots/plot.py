@@ -146,13 +146,12 @@ p2,=ax1.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
 p3,=ax1.plot(k1,dA_LS, linestyle='--',marker='None', c='r')
 p4,=ax1.plot(k1,dB_LS, linestyle='--',marker='None', c='b')
 
+p7,= ax2.plot(k2,dA_NN2,linestyle='-',marker='None', c='g')
+p8,= ax2.plot(k2,dB_NN2,linestyle='--',marker='None', c='g')
+p9,= ax2.plot(k3,dA_NN3,linestyle='-',marker='None', c='b')
+p10,=ax2.plot(k3,dB_NN3,linestyle='--',marker='None', c='b')
 p5,= ax2.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
-p6,= ax2.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
-p7,= ax2.plot(k2,dA_NN2,linestyle='-.',marker='None', c='r')
-p8,= ax2.plot(k2,dB_NN2,linestyle='-.',marker='None', c='b')
-p9,= ax2.plot(k3,dA_NN3,linestyle=':',marker='None', c='r')
-p10,=ax2.plot(k3,dB_NN3,linestyle=':',marker='None', c='b')
-
+p6,= ax2.plot(k1,dB_NN1,linestyle='--',marker='None', c='r')
 
 #place a label in the plot
 ax1.text(3e-2,2e-3, 'AstroNo: no baryon effects', fontsize=17, color='k')
