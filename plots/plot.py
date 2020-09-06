@@ -155,7 +155,7 @@ p10,=ax2.plot(k3,dB_NN3,linestyle=':',marker='None', c='b')
 
 
 #place a label in the plot
-ax1.text(3e-2,2e-3, 'model 0: no baryon effects', fontsize=17, color='k')
+ax1.text(3e-2,2e-3, 'AstroNo: no baryon effects', fontsize=17, color='k')
 ax2.text(3e-2,2e-3, 'neural networks', fontsize=17, color='k')
 
 #legend
@@ -168,12 +168,12 @@ ax1.legend([p1,p3,p2,p4],
 
 
 ax2.legend([p5,p7,p9,p6,p8,p10],
-           [r"$A:\,\,{\rm model\,0}$",
-            r"$A:\,\,{\rm model\,1}$",
-            r"$A:\,\,{\rm model\,2}$",
-            r"$B:\,\,{\rm model\,0}$",
-            r"$B:\,\,{\rm model\,1}$",
-            r"$B:\,\,{\rm model\,2}$"],
+           [r"$A:\,\,{\rm AstroNo}$",
+            r"$A:\,\,{\rm AstroDis}$",
+            r"$A:\,\,{\rm AstroCon}$",
+            r"$B:\,\,{\rm AstroNo}$",
+            r"$B:\,\,{\rm AstroDis}$",
+            r"$B:\,\,{\rm AstroCon}$"],
            loc=0,prop={'size':15},ncol=2,frameon=True)
 
 
