@@ -141,10 +141,10 @@ for ax in [ax1,ax2]:
     ax.set_xlabel(r'$k_{\rm max}\/[h\/{\rm Mpc}^{-1}]$',fontsize=18)
     ax.set_ylabel(r'${\rm error}$',fontsize=22)
 
-p1,=ax1.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
-p2,=ax1.plot(k1,dB_NN1,linestyle='-',marker='None', c='b')
-p3,=ax1.plot(k1,dA_LS, linestyle='--',marker='None', c='r')
-p4,=ax1.plot(k1,dB_LS, linestyle='--',marker='None', c='b')
+p1,=ax1.plot(k1,dA_NN1,linestyle='-',marker='None', c='purple')
+p2,=ax1.plot(k1,dB_NN1,linestyle='-',marker='None', c='salmon')
+p3,=ax1.plot(k1,dA_LS, linestyle='--',marker='None', c='purple')
+p4,=ax1.plot(k1,dB_LS, linestyle='--',marker='None', c='salmon')
 
 p7,= ax2.plot(k2,dA_NN2,linestyle='-',marker='None', c='g')
 p8,= ax2.plot(k2,dB_NN2,linestyle='--',marker='None', c='g')
@@ -154,7 +154,7 @@ p5,= ax2.plot(k1,dA_NN1,linestyle='-',marker='None', c='r')
 p6,= ax2.plot(k1,dB_NN1,linestyle='--',marker='None', c='r')
 
 #place a label in the plot
-ax1.text(3e-2,2e-3, 'AstroNo: no baryon effects', fontsize=17, color='k')
+ax1.text(3e-2,2e-3, 'AstroNone: no baryonic effects', fontsize=17, color='k')
 ax2.text(3e-2,2e-3, 'neural networks', fontsize=17, color='k')
 
 #legend
@@ -167,10 +167,10 @@ ax1.legend([p1,p3,p2,p4],
 
 
 ax2.legend([p5,p7,p9,p6,p8,p10],
-           [r"$A:\,\,{\rm AstroNo}$",
+           [r"$A:\,\,{\rm AstroNone}$",
             r"$A:\,\,{\rm AstroDis}$",
             r"$A:\,\,{\rm AstroCon}$",
-            r"$B:\,\,{\rm AstroNo}$",
+            r"$B:\,\,{\rm AstroNone}$",
             r"$B:\,\,{\rm AstroDis}$",
             r"$B:\,\,{\rm AstroCon}$"],
            loc=0,prop={'size':15},ncol=2,frameon=True)
